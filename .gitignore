@@ -1,0 +1,6 @@
+.env
+node_modules/
+/runs/
+logs/
+.DS_Store
+/bench/

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doorman</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --wall1:#C7D0DA; --wall2:#D8CDDD; --wall3:#CBD8D2;
+    --app:#F2F4F7; --panel:#FFFFFF; --line:#E2E6EC;
+    --ink:#14181F; --muted:#5F6B7A; --dim:#98A2B0;
+    --accent:#2B55E0; --accent-soft:#E6ECFD;
+    --ok:#1F9D55; --ok-soft:#E3F5EA; --bad:#D93A2B; --bad-soft:#FBE7E4; --hold:#D98E04; --hold-soft:#FDF1DC;
+    --wait:#DDE2E9; --eval:#9DB4F5;
+    --ui:"Instrument Sans",system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--wall1);background-image:linear-gradient(135deg,var(--wall1),var(--wall2) 55%,var(--wall3));min-height:100vh;color:var(--ink);font-family:var(--ui);padding:16px 16px 32px;line-height:1.3}
+  .holder{width:100%;max-width:1280px;margin:0 auto;position:relative}
+  .frame{width:1280px;height:720px;transform-origin:top left;background:var(--app);border-radius:14px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(20,24,31,.55),0 0 0 1px rgba(20,24,31,.08);display:grid;grid-template-rows:64px 96px 1fr 84px;gap:14px;padding:18px 22px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:22px;letter-spacing:-.02em}
+  .brand i{width:28px;height:28px;border-radius:7px;background:var(--ink);display:grid;place-items:center}
+  .brand i::after{content:"";width:10px;height:15px;border:2.5px solid #fff;border-radius:3px 3px 0 0;border-bottom:0;box-sizing:border-box}
+  .brand span{color:var(--muted);font-weight:500}
+  h1{margin:0;font-size:34px;font-weight:700;letter-spacing:-.035em;line-height:1;white-space:nowrap}
+  h1 em{font-style:normal;color:var(--accent)}
+  .poweredby{font:500 18px var(--ui);color:var(--muted);white-space:nowrap;display:flex;gap:10px;align-items:center}
+  .poweredby b{font-weight:700;color:var(--ink)}
+  .mode{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:6px 8px;border-radius:5px;background:var(--hold-soft);color:var(--hold)}
+  .mode.live{background:var(--ok-soft);color:var(--ok)}
+  .stats{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .stat{background:var(--panel);padding:10px 16px;display:grid;gap:4px;align-content:center;min-width:0}
+  .stat small{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .stat strong{font:600 44px/1 var(--ui);letter-spacing:-.035em;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stat strong sub{font:500 16px var(--mono);color:var(--dim);vertical-align:baseline;margin-left:5px}
+  .stat.ok strong{color:var(--ok)} .stat.bad strong{color:var(--bad)} .stat.hold strong{color:var(--hold)}
+  .main{display:grid;grid-template-columns:676px 1fr;gap:14px;min-height:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:10px;align-content:start;min-width:0;min-height:0;overflow:hidden}
+  .card h2{margin:0;font-size:15px;font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .card h2 span{font:500 13px var(--mono);color:var(--dim)}
+  .grid{display:grid;grid-template-columns:repeat(26,1fr);gap:4px}
+  .cell{aspect-ratio:1;border-radius:3px;background:var(--wait);transition:background .25s,transform .25s}
+  .cell.eval{background:var(--eval);transform:scale(1.2)}
+  .cell.deliver{background:var(--ok)} .cell.drop{background:var(--bad)} .cell.hold{background:var(--hold)} .cell.error{background:#000}
+  .legend{display:flex;gap:16px;font:500 13px var(--ui);color:var(--muted)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .right{display:grid;grid-template-rows:auto 1fr auto;gap:8px;min-height:0}
+  .now{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:5px;min-height:80px;align-content:start}
+  .now .who{display:flex;justify-content:space-between;gap:8px;font:500 14px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden}
+  .now .who b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+  .now .msg{font-size:16px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  mark{background:var(--bad-soft);color:var(--bad);padding:0 3px;border-radius:3px}
+  mark.h{background:var(--hold-soft);color:var(--hold)} mark.g{background:var(--ok-soft);color:var(--ok)}
+  .json{font:500 14px/1.4 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .json b{font-weight:600;color:var(--ink)}
+  .json b.deliver{color:var(--ok)} .json b.drop{color:var(--bad)} .json b.hold{color:var(--hold)}
+  .now.empty{color:var(--dim);font-size:16px;place-items:center;align-content:center}
+  .list{display:grid;gap:6px;align-content:start;min-height:0;overflow:hidden}
+  .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:5px 10px;border:1px solid var(--line);border-radius:9px;background:#FBFCFD;animation:pop .25s ease-out;min-width:0}
+  @keyframes pop{from{opacity:0;transform:translateY(-4px)}}
+  .pill{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:6px 8px;border-radius:5px;white-space:nowrap}
+  .pill.drop{background:var(--bad-soft);color:var(--bad)} .pill.hold{background:var(--hold-soft);color:var(--hold)}
+  .row .t{min-width:0;font-size:15px;line-height:1.25;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .t small{display:block;font:500 11px var(--mono);color:var(--dim);margin-top:1px}
+  .row .n{font:600 16px var(--mono);color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .empty{color:var(--dim);font-size:15px;padding:4px 0}
+  .foot{display:grid;grid-template-columns:auto auto auto auto 1fr auto;gap:28px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 18px;align-items:center}
+  .timer strong{font:600 46px/1 var(--ui);letter-spacing:-.045em;font-variant-numeric:tabular-nums;display:block}
+  .timer strong small{font-size:24px;color:var(--dim)}
+  .rate{display:grid;gap:4px}
+  .rate strong{font:600 28px/1 var(--ui);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .rate strong sub{font:500 14px var(--mono);color:var(--dim);vertical-align:baseline;margin-left:3px}
+  .rate span,.timer span{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:block}
+  .status{font:500 15px/1.3 var(--ui);color:var(--muted);min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .status b{color:var(--ink);font-weight:600}
+  .actions{display:flex;gap:8px;align-items:center}
+  button{font:600 17px var(--ui);padding:13px 20px;border-radius:9px;border:1px solid transparent;cursor:pointer;background:var(--accent);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.2)}
+  button.quiet{background:#fff;color:var(--ink);border-color:var(--line);box-shadow:none}
+  button:disabled{opacity:.45;cursor:default}
+  button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .fine{max-width:1280px;margin:12px auto 0;font:500 12px var(--ui);color:#3F4A57}
+  @media (prefers-reduced-motion:reduce){.cell{transition:none}.row{animation:none}}
+</style>
+</head>
+<body>
+<div class="holder" id="holder">
+<div class="frame" id="frame">
+  <div class="top">
+    <div class="brand"><i></i>Doorman <span>/ Form triage</span></div>
+    <h1>Let the people in. <em>Keep the bots out.</em></h1>
+    <div class="poweredby">Powered by <b>Jev</b> <span class="mode" id="mode">…</span></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><small>checked</small><strong><span id="sN">0</span><sub id="sTot">/ 0</sub></strong></div>
+    <div class="stat ok"><small>delivered</small><strong id="sOk">0</strong></div>
+    <div class="stat bad"><small>dropped</small><strong id="sBad">0</strong></div>
+    <div class="stat hold"><small>held for a human</small><strong id="sHold">0</strong></div>
+    <div class="stat"><small>median</small><strong><span id="sMed">—</span><sub>ms</sub></strong></div>
+    <div class="stat"><small>cost</small><strong id="sCost">$0.0000</strong></div>
+  </div>
+  <div class="main">
+    <div class="card">
+      <h2><span id="gridTitle">loading submissions…</span><span id="gridNote">one typed question each: is this a real request from a person?</span></h2>
+      <div class="grid" id="grid" aria-label="One square per submission"></div>
+      <div class="legend"><span><i style="background:var(--wait)"></i>Waiting</span><span><i style="background:var(--eval)"></i>Asking Jev</span><span><i style="background:var(--ok)"></i>Delivered</span><span><i style="background:var(--bad)"></i>Dropped</span><span><i style="background:var(--hold)"></i>Held for review</span></div>
+    </div>
+    <div class="card right">
+      <div class="now empty" id="now">Press Run Jev</div>
+      <div class="list" id="caught"><h2>Caught <span>the line that gave it away</span></h2><div class="empty">Dropped submissions land here.</div></div>
+      <div class="list" id="held"><h2>Held for a human <span>not sure either way</span></h2><div class="empty">The grey zone.</div></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="timer"><strong id="clock">00:00<small>.0</small></strong><span>run time</span></div>
+    <div class="rate"><strong><span id="rSec">—</span><sub>/ sec</sub></strong><span>throughput</span></div>
+    <div class="rate"><strong><span id="rP95">—</span><sub>ms</sub></strong><span>p95 latency</span></div>
+    <div class="rate"><strong>8</strong><span>workers</span></div>
+    <div class="status" id="status">deliver P(real) ≥ .80 · drop &lt; .20 · hold in between</div>
+    <div class="actions"><button class="quiet" id="reset">Reset</button><button id="run">▶ Run Jev</button></div>
+  </div>
+</div>
+</div>
+<p class="fine">Every submission is invented (data/submissions.json); the company, the product and every person in it are made up. Latency is the measured API round trip from the server; cost is input tokens at the published rate. In mock mode the probabilities come from a word list, not from Jev, and the badge says so.</p>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const holder=$('holder'),frame=$('frame');
+  function fit(){const s=Math.min(1,holder.clientWidth/1280);frame.style.transform=`scale(${s})`;holder.style.height=(720*s)+'px'}
+  addEventListener('resize',fit);fit();
+
+  const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let SUBS=[],cells=[],health={mode:'mock'},running=false,token=0,next=0,done=0,ok=0,bad=0,hold=0,lat=[],cost=0,t0=0,raf=0,rulesLet=0,rulesFlag=0;
+
+  fetch('/api/health').then(r=>r.json()).then(h=>{health=h;const m=$('mode');m.textContent=h.mode==='live'?h.model:'mock · no key yet';m.classList.toggle('live',h.mode==='live')});
+  fetch('/api/submissions').then(r=>r.json()).then(d=>{
+    SUBS=d.submissions;$('sTot').textContent='/ '+SUBS.length;
+    const b=SUBS.filter(s=>s.form==='demo').length;
+    $('gridTitle').textContent=`${SUBS.length} submissions · ${b} to a request-a-demo form, ${SUBS.length-b} to a checkout`;
+    const g=$('grid');g.innerHTML='';cells=SUBS.map(()=>{const c=document.createElement('div');c.className='cell';g.appendChild(c);return c});
+  });
+
+  const text=s=>s.form==='checkout'?`${s.order.items} · card ${s.signals.card_country} · IP ${s.signals.ip_country} · ${s.signals.attempts} attempt${s.signals.attempts>1?'s':''} · ${s.signals.device_orders_last_hour} from device/hr`:s.message;
+  function hl(s,r){const t=esc(text(s));if(!r.evidence)return t;const q=esc(r.evidence.text);const cls=r.route==='hold'?'h':r.route==='deliver'?'g':'';return t.includes(q)?t.replace(q,`<mark class="${cls}">${q}</mark>`):t}
+  function showNow(s,r){
+    const n=$('now');n.classList.remove('empty');
+    n.innerHTML=`<div class="who"><b>${esc(s.email)}</b><span>${s.form} · ${r?r.latency_ms+' ms':'asking jev…'}</span></div>
+      <div class="msg">${r?hl(s,r):esc(text(s))}</div>
+      <div class="json">${r?`{ "real": <b>${r.p_real.toFixed(2)}</b>${r.reason?`, "${r.reason}": <b>${r.reasons.find(x=>x.kind===r.reason).p.toFixed(2)}</b>`:''}, "route": <b class="${r.route}">"${r.route}"</b> }`:'{ "real": <b>…</b> }'}</div>`;
+  }
+  function addRow(list,s,r,cap){
+    const el=document.createElement('div');el.className='row';
+    el.innerHTML=`<span class="pill ${r.route}">${r.route}</span><div class="t">${r.evidence?`<mark class="${r.route==='hold'?'h':''}">${esc(r.evidence.text)}</mark>`:esc(text(s))}<small>${esc(s.email)} · ${s.form}${r.reason?' · '+r.reason:''}</small></div><div class="n">p ${r.p_real.toFixed(2)}</div>`;
+    const empty=list.querySelector('.empty');if(empty)empty.remove();
+    list.insertBefore(el,list.children[1]);while(list.children.length>cap+1)list.lastChild.remove();
+  }
+  function clock(ms){const s=ms/1000;$('clock').innerHTML=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}<small>.${Math.floor((s*10)%10)}</small>`}
+  function stats(){
+    $('sN').textContent=done;$('sOk').textContent=ok;$('sBad').textContent=bad;$('sHold').textContent=hold;
+    if(lat.length){const s=[...lat].sort((a,b)=>a-b);$('sMed').textContent=s[s.length>>1];$('rP95').textContent=s[Math.floor(s.length*.95)]}
+    const sec=(performance.now()-t0)/1000;if(sec>.3)$('rSec').textContent=(done/sec).toFixed(1);
+    $('sCost').textContent='$'+cost.toFixed(4);
+  }
+  function tick(){if(!running)return;clock(performance.now()-t0);raf=requestAnimationFrame(tick)}
+  async function worker(my){
+    while(running&&my===token&&next<SUBS.length){
+      const i=next++;const s=SUBS[i];cells[i].classList.add('eval');showNow(s,null);
+      let r;
+      try{const res=await fetch('/api/judge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});r=await res.json();if(!res.ok)throw new Error(r.error||res.status)}
+      catch(e){if(my!==token)return;cells[i].classList.remove('eval');cells[i].classList.add('error');done++;$('status').innerHTML=`<b>Error:</b> ${esc(e.message)}`;continue}
+      if(my!==token)return;
+      cells[i].classList.remove('eval');cells[i].classList.add(r.route);
+      if(health.mode==='live'&&r.model&&$('mode').textContent!==r.model)$('mode').textContent=r.model;
+      done++;lat.push(r.latency_ms);cost+=r.cost_usd||0;
+      if(r.route==='deliver')ok++;else if(r.route==='drop'){bad++;addRow($('caught'),s,r,2)}else{hold++;addRow($('held'),s,r,2)}
+      if(r.rules){if(r.rules.route!=='drop'&&(s.label==='pitch'||s.label==='automated'))rulesLet++;if(r.rules.route!=='deliver'&&s.label==='real')rulesFlag++}
+      showNow(s,r);stats();
+    }
+  }
+  async function run(){
+    if(running||!SUBS.length)return;if(next>=SUBS.length)reset();
+    running=true;const my=++token;t0=performance.now();$('run').disabled=true;$('run').textContent='Running…';
+    $('status').innerHTML=`<b>8 workers</b> · one request per submission · ${health.mode==='live'?esc(health.model):'mock'}`;
+    tick();
+    await Promise.all(Array.from({length:8},()=>worker(my)));
+    if(my!==token)return;
+    running=false;cancelAnimationFrame(raf);const el=performance.now()-t0;clock(el);stats();
+    $('run').disabled=false;$('run').textContent='↻ Run again';
+    $('gridNote').textContent=`done in ${(el/1000).toFixed(1)} s`;
+    $('status').innerHTML=`The word list on the same forms: <b>${rulesLet} pitches let through</b>, <b>${rulesFlag} real requests flagged</b>.`;
+  }
+  function reset(){
+    token++;running=false;cancelAnimationFrame(raf);next=0;done=0;ok=0;bad=0;hold=0;lat=[];cost=0;rulesLet=0;rulesFlag=0;
+    for(const c of cells)c.className='cell';
+    $('sMed').textContent='—';$('rSec').textContent='—';$('rP95').textContent='—';stats();clock(0);
+    $('now').className='now empty';$('now').textContent='Press Run Jev';
+    $('caught').innerHTML='<h2>Caught <span>the line that gave it away</span></h2><div class="empty">Dropped submissions land here.</div>';
+    $('held').innerHTML='<h2>Held for a human <span>not sure either way</span></h2><div class="empty">The grey zone.</div>';
+    $('run').disabled=false;$('run').textContent='▶ Run Jev';
+    $('gridNote').textContent='one typed question each: is this a real request from a person?';
+    $('status').innerHTML='deliver P(real) ≥ .80 · drop &lt; .20 · hold in between';
+  }
+  $('run').addEventListener('click',run);$('reset').addEventListener('click',reset);
+})();
+</script>
+</body>
+</html>

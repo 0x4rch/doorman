@@ -1,0 +1,20 @@
+{
+  "name": "doorman",
+  "version": "0.1.0",
+  "description": "Bot and pitch detection for risky forms (request a demo, checkout, contact sales) with one typed question to Jev.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "judge": "node cli.js",
+    "batch": "node scripts/run-batch.js",
+    "generate": "node scripts/generate-submissions.js",
+    "test": "node --test test/",
+    "bench:youtube": "node scripts/bench-youtube.js"
+  },
+  "license": "MIT"
+}
